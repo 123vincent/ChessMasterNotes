@@ -1,0 +1,173 @@
+// File: vite.config.ts
+import { defineConfig } from 'vite';
+import path from 'path';
+import copy from 'rollup-plugin-copy';
+
+export default defineConfig({
+  root: '.',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    lib: {
+      entry: path.resolve(__dirname, 'src/main.ts'),
+      formats: ['cjs'],
+    },
+    rollupOptions: {
+      external: ['obsidian'],
+      output: {
+        format: 'cjs',
+        entryFileNames: 'main.js',
+        assetFileNames: assetInfo =>
+          assetInfo.name && assetInfo.name.endsWith('.css') ? 'styles.css' : assetInfo.name!,
+      },
+      plugins: [
+        copy({
+          targets: [{ src: 'manifest.json', dest: 'dist' }],
+          hook: 'writeBundle',
+        }),
+      ],
+    },
+  },
+  resolve: {
+    alias: { '@': path.resolve(__dirname, './src') },
+  },
+});
+
+// ------------------------------
+// File: src/main.ts
+import { App, Plugin } from 'obsidian';
+import { ChesserSettings, DEFAULT_SETTINGS, ChessMasterNotesSettingTab } from './ChesserSettings';
+import { drawChessBoard } from './Chesser';
+
+export default class ChessMasterNotesPlugin extends Plugin {
+  settings!: ChesserSettings;
+
+  async onload() {
+    console.log('ChessMasterNotesPlugin: onload start');
+    await this.loadSettings();
+    console.log('ChessMasterNotesPlugin: settings loaded', this.settings);
+    this.addSettingTab(new ChessMasterNotesSettingTab(this.app, this));
+
+    this.registerMarkdownCodeBlockProcessor('chess', (source, el) => {
+      console.log('Processor chess called, source:', source);
+      drawChessBoard(this.app, this.settings, source, el);
+    });
+    this.registerMarkdownCodeBlockProcessor('chesser', (source, el) => {
+      console.log('Processor chesser called, source:', source);
+      drawChessBoard(this.app, this.settings, source, el);
+    });
+    console.log('ChessMasterNotesPlugin: processors registered');
+  }
+
+  async loadSettings() {
+    console.log('ChessMasterNotesPlugin: loadSettings');
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+
+  async saveSettings() {
+    console.log('ChessMasterNotesPlugin: saveSettings', this.settings);
+    await this.saveData(this.settings);
+  }
+}
+
+// ------------------------------
+// File: src/ChesserSettings.ts
+import { PluginSettingTab, App, Setting } from 'obsidian';
+import type ChessMasterNotesPlugin from './main';
+
+export interface ChesserSettings {
+  pieceStyle: string;
+  theme: 'light' | 'dark';
+  enablePuzzleMode: boolean;
+  stockfishPath?: string;
+}
+
+export const DEFAULT_SETTINGS: ChesserSettings = {
+  pieceStyle: 'merida',
+  theme: 'light',
+  enablePuzzleMode: false,
+};
+
+export class ChessMasterNotesSettingTab extends PluginSettingTab {
+  plugin: ChessMasterNotesPlugin;
+  constructor(app: App, plugin: ChessMasterNotesPlugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display(): void {
+    const { containerEl } = this;
+    containerEl.empty();
+    containerEl.createEl('h2', { text: 'Chess Master Notes Settings' });
+
+    new Setting(containerEl)
+      .setName('Piece Style')
+      .setDesc('Choose board style')
+      .addText(text =>
+        text
+          .setPlaceholder('e.g. merida')
+          .setValue(this.plugin.settings.pieceStyle)
+          .onChange(async value => {
+            console.log('SettingTab: pieceStyle changed to', value);
+            this.plugin.settings.pieceStyle = value;
+            await this.plugin.saveSettings();
+          })
+      );
+  }
+}
+
+// ------------------------------
+// File: src/Chesser.ts
+import { App, parseYaml } from 'obsidian';
+import { Chess } from 'chess.js';
+import { Chessground } from 'chessground';
+import 'chessground/assets/chessground.base.css';
+import 'chessground/assets/chessground.cburnett.css';
+import type { ChesserSettings } from './ChesserSettings';
+
+export function drawChessBoard(
+  app: App,
+  settings: ChesserSettings,
+  source: string,
+  el: HTMLElement
+) {
+  console.log('drawChessBoard: called with source:', source);
+  let config;
+  try {
+    config = parseYaml(source) as {
+      fen: string;
+      pgn?: string;
+      orientation?: 'white' | 'black';
+      drawable?: boolean;
+      id?: string;
+    };
+    console.log('drawChessBoard: parsed config', config);
+  } catch (e) {
+    console.error('drawChessBoard: parseYaml error', e);
+    return;
+  }
+
+  const chess = new Chess(config.fen || undefined);
+  console.log('drawChessBoard: initialized Chess with fen', chess.fen());
+
+  const board = Chessground(el, {
+    fen: chess.fen(),
+    orientation: config.orientation || 'white',
+    movable: {
+      free: false,
+      color: chess.turn() === 'w' ? 'white' : 'black',
+    },
+  });
+  console.log('drawChessBoard: Chessground initialized');
+}
+
+// ------------------------------
+// File: src/menu.ts
+// TODO: toolbar buttons (flip, undo, redo, copy PGN/FEN)
+
+// ------------------------------
+// File: src/startingPositions.ts
+export const STARTING_POSITIONS = [
+  { name: 'Standard', fen: 'start' },
+  { name: "King's Gambit", fen: 'rnbqkb1r/pppp1ppp/5n2/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR b KQkq - 2 2' },
+];
