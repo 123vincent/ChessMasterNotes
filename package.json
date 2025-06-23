@@ -6,11 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && vite build",
-    "dev": "vite build --watch --mode development",
-    "preversion": "git add . && git diff --staged --quiet || git commit -m \"chore: pré-release changes\"",
-    "version": "node scripts/version-bump.mjs",
-    "postversion": "git add manifest.json versions.json CHANGELOG.md && git commit --amend --no-edit && git-cliff && git push --follow-tags",
-    "release": "npm version patch"
+    "dev": "vite build --watch --mode development"
   },
   "keywords": [],
   "devDependencies": {
