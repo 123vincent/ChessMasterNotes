@@ -1,3 +1,5 @@
+console.log('Running version-bump, targetVersion=', process.env.npm_package_version);
+
 import { readFileSync, writeFileSync } from "fs";
 
 const targetVersion = process.env.npm_package_version;
