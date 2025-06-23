@@ -1,7 +1,7 @@
 {
 	"id": "chessmasternotes",
 	"name": "ChessMasterNotes",
-	"version": "0.0.1",
+	"version": "0.1.2",
 	"minAppVersion": "0.9.12",
 	"description": "Study and annotate chess games interactively in Obsidian using PGN and FEN.",
 	"author": "Vincent B.",

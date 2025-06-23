@@ -1,6 +1,6 @@
 {
   "name": "chessmasternotes",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A chess game viewer/editor",
   "main": "main.js",
   "type": "module",
