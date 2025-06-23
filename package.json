@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && vite build",
     "dev": "vite build --watch --mode development",
-    "new-release": "node scripts/version-bump.mjs && git-cliff"
+    "new-release": "npm version patch && git push --follow-tags"
   },
   "keywords": [],
   "devDependencies": {
