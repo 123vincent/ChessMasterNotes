@@ -11,6 +11,8 @@ export default defineConfig(async ({ mode }) => {
     build: {
       outDir: 'dist',
       cssCodeSplit: false,
+      minify: false, 
+      sourcemap: false, 
       lib: {
         entry: resolve(__dirname, 'src/main.ts'),
         name: 'main',
